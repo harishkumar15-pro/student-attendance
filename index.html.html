@@ -1,0 +1,1251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ScanMark — College Attendance System</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2235;
+    --border: rgba(255,255,255,0.07);
+    --accent: #4f8ef7;
+    --accent2: #38e0b0;
+    --danger: #f7614f;
+    --warning: #f7c04f;
+    --success: #38e0b0;
+    --text: #f0f4ff;
+    --muted: #6b7a99;
+    --mono: 'Space Mono', monospace;
+    --sans: 'DM Sans', sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--sans); min-height: 100vh; overflow-x: hidden; }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: var(--bg); } ::-webkit-scrollbar-thumb { background: var(--surface2); border-radius: 3px; }
+
+  /* LAYOUT */
+  .app { display: grid; grid-template-columns: 240px 1fr; grid-template-rows: 60px 1fr; min-height: 100vh; }
+  header { grid-column: 1 / -1; display: flex; align-items: center; padding: 0 24px; border-bottom: 1px solid var(--border); background: var(--surface); gap: 16px; position: sticky; top: 0; z-index: 100; }
+  .logo { font-family: var(--mono); font-size: 18px; color: var(--accent); letter-spacing: -1px; }
+  .logo span { color: var(--accent2); }
+  .header-right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+  .header-time { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+  .avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: #fff; cursor: pointer; }
+
+  /* SIDEBAR */
+  nav { background: var(--surface); border-right: 1px solid var(--border); padding: 20px 0; display: flex; flex-direction: column; gap: 4px; }
+  .nav-label { font-size: 10px; color: var(--muted); letter-spacing: 1.5px; padding: 12px 20px 4px; font-family: var(--mono); }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 20px; cursor: pointer; font-size: 14px; color: var(--muted); border-left: 2px solid transparent; transition: all .15s; user-select: none; }
+  .nav-item:hover { color: var(--text); background: var(--surface2); }
+  .nav-item.active { color: var(--accent); border-left-color: var(--accent); background: rgba(79,142,247,.08); }
+  .nav-item svg { width: 16px; height: 16px; flex-shrink: 0; }
+  .nav-badge { margin-left: auto; background: var(--accent); color: #fff; font-size: 10px; font-family: var(--mono); padding: 2px 6px; border-radius: 10px; }
+
+  /* MAIN */
+  main { padding: 28px; overflow-y: auto; }
+  .page { display: none; } .page.active { display: block; }
+
+  /* CARDS */
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+  .card-title { font-size: 13px; color: var(--muted); margin-bottom: 8px; font-family: var(--mono); letter-spacing: .5px; }
+  .card-value { font-size: 28px; font-weight: 600; font-family: var(--mono); }
+  .card-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+  /* STATS GRID */
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+
+  /* SECTION HEADER */
+  .sec-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .sec-title { font-size: 18px; font-weight: 500; }
+  .sec-sub { font-size: 13px; color: var(--muted); margin-top: 2px; }
+
+  /* BUTTONS */
+  .btn { display: inline-flex; align-items: center; gap: 8px; padding: 9px 18px; border-radius: 8px; font-size: 13px; font-family: var(--sans); font-weight: 500; cursor: pointer; border: none; transition: all .15s; }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: #3a7de8; }
+  .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+  .btn-ghost:hover { background: var(--surface2); color: var(--text); }
+  .btn-danger { background: rgba(247,97,79,.12); color: var(--danger); border: 1px solid rgba(247,97,79,.2); }
+  .btn-danger:hover { background: rgba(247,97,79,.2); }
+  .btn-success { background: rgba(56,224,176,.12); color: var(--success); border: 1px solid rgba(56,224,176,.2); }
+  .btn-sm { padding: 6px 12px; font-size: 12px; }
+
+  /* BADGE */
+  .badge { display: inline-flex; align-items: center; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-family: var(--mono); font-weight: 700; letter-spacing: .3px; }
+  .badge-present { background: rgba(56,224,176,.12); color: var(--success); }
+  .badge-absent { background: rgba(247,97,79,.12); color: var(--danger); }
+  .badge-late { background: rgba(247,192,79,.12); color: var(--warning); }
+
+  /* TABLE */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; padding: 10px 14px; color: var(--muted); font-size: 11px; font-family: var(--mono); letter-spacing: .8px; border-bottom: 1px solid var(--border); font-weight: 400; }
+  td { padding: 12px 14px; border-bottom: 1px solid var(--border); color: var(--text); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,.02); }
+
+  /* SCANNER */
+  .scanner-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  #scanner-box { width: 100%; aspect-ratio: 1; border-radius: 12px; overflow: hidden; background: #000; position: relative; border: 1px solid var(--border); }
+  #scanner-box video { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .scan-overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; }
+  .scan-corner { position: absolute; width: 50px; height: 50px; }
+  .scan-corner::before, .scan-corner::after { content: ''; position: absolute; background: var(--accent2); }
+  .scan-corner::before { width: 3px; height: 100%; }
+  .scan-corner::after { width: 100%; height: 3px; }
+  .sc-tl { top: 20%; left: 20%; }
+  .sc-tr { top: 20%; right: 20%; transform: scaleX(-1); }
+  .sc-bl { bottom: 20%; left: 20%; transform: scaleY(-1); }
+  .sc-br { bottom: 20%; right: 20%; transform: scale(-1); }
+  .scan-line { position: absolute; left: 20%; right: 20%; height: 2px; background: var(--accent2); opacity: .7; animation: scan 2s ease-in-out infinite; box-shadow: 0 0 8px var(--accent2); }
+  @keyframes scan { 0%,100% { top: 22%; } 50% { top: 78%; } }
+  .scan-placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; gap: 12px; color: var(--muted); }
+  .scan-placeholder svg { opacity: .3; }
+  .scan-success-flash { position: absolute; inset: 0; background: rgba(56,224,176,.2); opacity: 0; transition: opacity .3s; border-radius: 12px; }
+  .scan-success-flash.show { opacity: 1; }
+
+  /* SCAN LOG */
+  .scan-log { max-height: 340px; overflow-y: auto; }
+  .scan-entry { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .scan-entry:last-child { border-bottom: none; }
+  .scan-avatar { width: 36px; height: 36px; border-radius: 8px; background: var(--surface2); display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-size: 11px; color: var(--accent); flex-shrink: 0; }
+  .scan-info { flex: 1; min-width: 0; }
+  .scan-name { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .scan-meta { font-size: 11px; color: var(--muted); font-family: var(--mono); }
+  .scan-time { font-size: 11px; color: var(--muted); font-family: var(--mono); flex-shrink: 0; }
+
+  /* FORM */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-group.full { grid-column: 1 / -1; }
+  label { font-size: 12px; color: var(--muted); font-family: var(--mono); letter-spacing: .5px; }
+  input, select, textarea { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; color: var(--text); font-family: var(--sans); font-size: 14px; outline: none; transition: border-color .15s; }
+  input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+  select option { background: var(--surface2); }
+  textarea { resize: vertical; min-height: 80px; }
+
+  /* SEARCH */
+  .search-bar { display: flex; align-items: center; gap: 8px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 0 14px; }
+  .search-bar input { background: none; border: none; padding: 10px 0; flex: 1; font-size: 14px; color: var(--text); }
+  .search-bar svg { color: var(--muted); width: 16px; height: 16px; flex-shrink: 0; }
+
+  /* ERROR BANNER */
+  .err-banner { background: rgba(247,97,79,.1); border: 1px solid rgba(247,97,79,.3); color: var(--danger); border-radius: 8px; padding: 12px 16px; font-size: 13px; margin-bottom: 16px; display: none; }
+
+  /* TABS */
+  .tabs { display: flex; gap: 4px; background: var(--surface2); border-radius: 8px; padding: 4px; margin-bottom: 20px; }
+  .tab { padding: 8px 16px; border-radius: 6px; font-size: 13px; cursor: pointer; color: var(--muted); transition: all .15s; user-select: none; }
+  .tab.active { background: var(--surface); color: var(--text); }
+
+  /* PROGRESS BAR */
+  .progress-wrap { background: var(--surface2); border-radius: 4px; height: 6px; overflow: hidden; }
+  .progress-bar { height: 100%; border-radius: 4px; background: var(--accent2); transition: width .4s; }
+
+  /* ALERT */
+  .alert { padding: 12px 16px; border-radius: 8px; font-size: 13px; margin-bottom: 12px; }
+  .alert-info { background: rgba(79,142,247,.1); border: 1px solid rgba(79,142,247,.2); color: #a0bcff; }
+  .alert-success { background: rgba(56,224,176,.1); border: 1px solid rgba(56,224,176,.2); color: var(--success); }
+
+  /* QR GENERATOR */
+  .qr-preview { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 20px; background: #fff; border-radius: 12px; }
+
+  /* MODAL */
+  .modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.7); z-index: 200; align-items: center; justify-content: center; }
+  .modal-bg.open { display: flex; }
+  .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px; width: 500px; max-width: 95vw; max-height: 90vh; overflow-y: auto; }
+  .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .modal-title { font-size: 16px; font-weight: 500; }
+  .modal-close { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 20px; line-height: 1; padding: 4px; }
+  .modal-close:hover { color: var(--text); }
+
+  /* TOAST */
+  #toast { position: fixed; bottom: 24px; right: 24px; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 12px 18px; font-size: 13px; z-index: 300; transform: translateY(80px); opacity: 0; transition: all .3s; display: flex; align-items: center; gap: 10px; }
+  #toast.show { transform: translateY(0); opacity: 1; }
+  #toast.t-success { border-color: rgba(56,224,176,.3); }
+  #toast.t-error { border-color: rgba(247,97,79,.3); }
+
+  /* CHART SIMPLE */
+  .bar-chart { display: flex; align-items: flex-end; gap: 6px; height: 80px; }
+  .bar-chart .bar { flex: 1; border-radius: 4px 4px 0 0; background: var(--accent); min-width: 8px; transition: height .4s; }
+  .bar-chart .bar.low { background: var(--danger); }
+  .bar-chart .bar.mid { background: var(--warning); }
+
+  /* RESPONSIVE */
+  @media (max-width: 900px) {
+    .app { grid-template-columns: 1fr; grid-template-rows: 60px auto 1fr; }
+    nav { grid-row: 2; flex-direction: row; flex-wrap: wrap; padding: 8px 12px; overflow-x: auto; border-right: none; border-bottom: 1px solid var(--border); }
+    .nav-label { display: none; }
+    .nav-item { border-left: none; border-bottom: 2px solid transparent; padding: 8px 12px; font-size: 12px; white-space: nowrap; }
+    .nav-item.active { border-bottom-color: var(--accent); border-left-color: transparent; background: none; }
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .scanner-layout { grid-template-columns: 1fr; }
+    .form-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+<!-- HEADER -->
+<header>
+  <div class="logo">Scan<span>Mark</span></div>
+  <div style="font-size:12px;color:var(--muted);margin-left:8px;">College Attendance System</div>
+  <div class="header-right">
+    <div class="header-time" id="clock">00:00:00</div>
+    <div style="font-size:12px;color:var(--muted);font-family:var(--mono);" id="hdate"></div>
+    <div class="avatar" title="Admin">AD</div>
+  </div>
+</header>
+
+<!-- SIDEBAR -->
+<nav id="sidebar">
+  <div class="nav-label">MAIN</div>
+  <div class="nav-item active" onclick="goto('dashboard')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+    Dashboard
+  </div>
+  <div class="nav-item" onclick="goto('scanner')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h2M4 12h2M4 18h2M18 6h2M18 12h2M18 18h2M8 4v2M12 4v2M16 4v2M8 18v2M12 18v2M16 18v2M7 7h10v10H7z"/></svg>
+    QR Scanner
+    <span class="nav-badge" id="scan-count-badge">0</span>
+  </div>
+  <div class="nav-item" onclick="goto('students')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    Students
+  </div>
+  <div class="nav-item" onclick="goto('reports')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+    Reports
+  </div>
+  <div class="nav-label">MANAGE</div>
+  <div class="nav-item" onclick="goto('classes')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+    Classes
+  </div>
+  <div class="nav-item" onclick="goto('qrgen')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="5" height="5" rx="1"/><rect x="16" y="3" width="5" height="5" rx="1"/><rect x="3" y="16" width="5" height="5" rx="1"/><circle cx="16.5" cy="16.5" r="1"/><circle cx="19.5" cy="16.5" r="1"/><circle cx="16.5" cy="19.5" r="1"/><circle cx="19.5" cy="19.5" r="1"/></svg>
+    QR Generator
+  </div>
+  <div class="nav-label">SYSTEM</div>
+  <div class="nav-item" onclick="exportCSV()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    Export CSV
+  </div>
+</nav>
+
+<!-- MAIN -->
+<main>
+
+  <!-- DASHBOARD -->
+  <div class="page active" id="page-dashboard">
+    <div class="sec-header">
+      <div>
+        <div class="sec-title">Dashboard</div>
+        <div class="sec-sub">Today's attendance overview</div>
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="goto('scanner')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h2M18 6h2M4 18h2M18 18h2M8 4v2M16 4v2M8 18v2M16 18v2M7 7h10v10H7z"/></svg>
+        Start Scanning
+      </button>
+    </div>
+
+    <div class="stats-grid">
+      <div class="card">
+        <div class="card-title">TOTAL STUDENTS</div>
+        <div class="card-value" id="stat-total">0</div>
+        <div class="card-sub">Registered</div>
+      </div>
+      <div class="card">
+        <div class="card-title">PRESENT TODAY</div>
+        <div class="card-value" style="color:var(--success)" id="stat-present">0</div>
+        <div class="card-sub" id="stat-pct">0% attendance</div>
+      </div>
+      <div class="card">
+        <div class="card-title">ABSENT</div>
+        <div class="card-value" style="color:var(--danger)" id="stat-absent">0</div>
+        <div class="card-sub">Not scanned</div>
+      </div>
+      <div class="card">
+        <div class="card-title">CLASSES TODAY</div>
+        <div class="card-value" id="stat-classes">3</div>
+        <div class="card-sub">Active sessions</div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+      <div class="card">
+        <div class="card-title" style="margin-bottom:16px;">RECENT SCANS</div>
+        <div id="dash-recent">
+          <p style="color:var(--muted);font-size:13px;text-align:center;padding:20px 0;">No scans yet today</p>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title" style="margin-bottom:16px;">WEEKLY ATTENDANCE</div>
+        <div style="display:flex;align-items:flex-end;gap:6px;height:100px;" id="week-chart"></div>
+        <div style="display:flex;justify-content:space-between;margin-top:8px;">
+          <span style="font-size:11px;color:var(--muted);font-family:var(--mono);">MON</span>
+          <span style="font-size:11px;color:var(--muted);font-family:var(--mono);">TUE</span>
+          <span style="font-size:11px;color:var(--muted);font-family:var(--mono);">WED</span>
+          <span style="font-size:11px;color:var(--muted);font-family:var(--mono);">THU</span>
+          <span style="font-size:11px;color:var(--muted);font-family:var(--mono);">FRI</span>
+          <span style="font-size:11px;color:var(--muted);font-family:var(--mono);">SAT</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCANNER -->
+  <div class="page" id="page-scanner">
+    <div class="sec-header">
+      <div>
+        <div class="sec-title">QR Scanner</div>
+        <div class="sec-sub">Scan student QR codes to mark attendance</div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <select id="scan-session" style="font-size:13px;padding:8px 12px;">
+          <option value="morning">🌅 Morning</option>
+          <option value="evening">🌆 Evening</option>
+        </select>
+        <select id="scan-class" style="font-size:13px;padding:8px 12px;">
+          <option value="">All Classes</option>
+          <option value="CS-A">CS - Section A</option>
+          <option value="CS-B">CS - Section B</option>
+          <option value="EC-A">EC - Section A</option>
+          <option value="ME-A">ME - Section A</option>
+        </select>
+        <button class="btn btn-ghost btn-sm" onclick="printAttendance()">🖨️ Print</button>
+      </div>
+    </div>
+
+    <div id="scan-err" class="err-banner"></div>
+    <div id="scan-alert" class="alert alert-info" style="display:none;"></div>
+    <div id="time-rule-banner" style="display:flex;align-items:center;gap:10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 16px;margin-bottom:16px;font-size:13px;">
+      <span style="font-family:var(--mono);font-size:18px;" id="time-rule-icon">&#9632;</span>
+      <div>
+        <span id="time-rule-label" style="font-weight:500;"></span>
+        <span style="color:var(--muted);margin-left:8px;font-size:12px;">Morning: before 9:15 AM &nbsp;|&nbsp; Evening: after 3:00 PM</span>
+      </div>
+      <span style="margin-left:auto;font-family:var(--mono);font-size:12px;color:var(--muted);" id="time-rule-now"></span>
+    </div>
+
+    <div class="scanner-layout">
+      <div>
+        <div id="scanner-box">
+          <div class="scan-placeholder" id="scan-ph">
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M4 6h2M18 6h2M4 18h2M18 18h2M8 4v2M16 4v2M8 18v2M16 18v2M7 7h10v10H7z"/></svg>
+            <span style="font-size:13px;">Camera not started</span>
+            <span style="font-size:11px;color:var(--muted);text-align:center;max-width:180px;">Click "Start Camera" to begin scanning</span>
+          </div>
+          <video id="scan-video" autoplay playsinline muted style="display:none;"></video>
+          <div class="scan-overlay" id="scan-ov" style="display:none;">
+            <div class="sc-tl scan-corner"></div>
+            <div class="sc-tr scan-corner"></div>
+            <div class="sc-bl scan-corner"></div>
+            <div class="sc-br scan-corner"></div>
+            <div class="scan-line"></div>
+          </div>
+          <div class="scan-success-flash" id="scan-flash"></div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:12px;justify-content:center;">
+          <button class="btn btn-primary" id="btn-cam-start" onclick="startCamera()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+            Start Camera
+          </button>
+          <button class="btn btn-ghost" id="btn-cam-stop" onclick="stopCamera()" style="display:none;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="6" width="12" height="12" rx="1"/></svg>
+            Stop
+          </button>
+          <button class="btn btn-ghost" onclick="toggleFlip()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+            Flip
+          </button>
+        </div>
+        <div style="margin-top:16px;">
+          <p style="font-size:12px;color:var(--muted);margin-bottom:8px;font-family:var(--mono);">MANUAL / DEMO SCAN</p>
+          <div style="display:flex;gap:8px;">
+            <input id="manual-input" placeholder="Enter student ID or scan data..." style="flex:1;" onkeydown="if(event.key==='Enter')manualScan()">
+            <button class="btn btn-ghost" onclick="manualScan()">Mark</button>
+          </div>
+          <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
+            <button class="btn btn-ghost btn-sm" onclick="demoScan('STU001|Arjun Kumar|CS-A')">Demo: Arjun</button>
+            <button class="btn btn-ghost btn-sm" onclick="demoScan('STU002|Priya Sharma|CS-B')">Demo: Priya</button>
+            <button class="btn btn-ghost btn-sm" onclick="demoScan('STU003|Ravi Patel|EC-A')">Demo: Ravi</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="display:flex;flex-direction:column;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <div class="card-title" style="margin:0;">TODAY'S SCAN LOG</div>
+          <button class="btn btn-ghost btn-sm" onclick="printAttendance()">🖨️ Print</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin:8px 0 12px;">
+          <span style="font-family:var(--mono);font-size:20px;font-weight:700;color:var(--accent2);" id="scan-log-count">0</span>
+          <span style="font-size:12px;color:var(--muted);">students marked present</span>
+          <button class="btn btn-ghost btn-sm" onclick="clearLog()" style="margin-left:auto;">Clear</button>
+        </div>
+        <div class="scan-log" id="scan-log">
+          <p style="color:var(--muted);font-size:13px;text-align:center;padding:20px 0;">No scans yet</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STUDENTS -->
+  <div class="page" id="page-students">
+    <div class="sec-header">
+      <div>
+        <div class="sec-title">Students</div>
+        <div class="sec-sub" id="stu-sub">0 students registered</div>
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="openAddStudent()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add Student
+      </button>
+    </div>
+    <div style="display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap;">
+      <div class="search-bar" style="flex:1;min-width:180px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input id="stu-search" placeholder="Search by name, ID, or department..." oninput="renderStudents()">
+      </div>
+      <select id="stu-filter" onchange="renderStudents()" style="font-size:13px;padding:8px 12px;">
+        <option value="">All Departments</option>
+        <option value="CS">Computer Science</option>
+        <option value="EC">Electronics</option>
+        <option value="ME">Mechanical</option>
+        <option value="CE">Civil</option>
+      </select>
+      <select id="stu-status-filter" onchange="renderStudents()" style="font-size:13px;padding:8px 12px;">
+        <option value="">All Status</option>
+        <option value="present">Present</option>
+        <option value="absent">Absent</option>
+        <option value="late">Late</option>
+      </select>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center;">
+      <span style="font-size:12px;color:var(--muted);font-family:var(--mono);">BULK ACTIONS:</span>
+      <button class="btn btn-success btn-sm" onclick="markAllPresent()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        Mark All Present
+      </button>
+      <button class="btn btn-danger btn-sm" onclick="markAllAbsent()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        Mark All Absent
+      </button>
+      <button class="btn btn-ghost btn-sm" onclick="markFilteredPresent()">Mark Filtered Present</button>
+      <button class="btn btn-ghost btn-sm" onclick="markFilteredAbsent()">Mark Filtered Absent</button>
+      <span id="bulk-info" style="font-size:12px;color:var(--muted);margin-left:4px;"></span>
+    </div>
+
+    <div class="card">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:36px;"><input type="checkbox" id="chk-all" onchange="toggleAllCheckboxes(this)" style="cursor:pointer;"></th>
+              <th>ID</th><th>Name</th><th>Dept</th><th>Sec</th><th>☀️ Morning</th><th>🌆 Evening</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="stu-table"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- REPORTS -->
+  <div class="page" id="page-reports">
+    <div class="sec-header">
+      <div><div class="sec-title">Reports</div><div class="sec-sub">Attendance analytics</div></div>
+      <button class="btn btn-ghost btn-sm" onclick="exportCSV()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export CSV
+      </button>
+    </div>
+    <div class="stats-grid" style="margin-bottom:20px;">
+      <div class="card"><div class="card-title">TOTAL SCANS</div><div class="card-value" id="r-total-scans">0</div></div>
+      <div class="card"><div class="card-title">AVG ATTENDANCE</div><div class="card-value" style="color:var(--accent2);" id="r-avg">0%</div></div>
+      <div class="card"><div class="card-title">PERFECT ATTENDANCE</div><div class="card-value" style="color:var(--success);" id="r-perfect">0</div></div>
+      <div class="card"><div class="card-title">AT RISK (&lt;75%)</div><div class="card-value" style="color:var(--danger);" id="r-risk">0</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title" style="margin-bottom:12px;">ATTENDANCE RECORDS</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Student ID</th><th>Name</th><th>Dept</th><th>Times Scanned</th><th>Last Scan</th><th>Attendance %</th></tr></thead>
+          <tbody id="rep-table"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- CLASSES -->
+  <div class="page" id="page-classes">
+    <div class="sec-header">
+      <div><div class="sec-title">Classes</div><div class="sec-sub">Manage class sessions</div></div>
+      <button class="btn btn-primary btn-sm" onclick="openAddClass()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add Class
+      </button>
+    </div>
+    <div class="card">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Code</th><th>Subject</th><th>Department</th><th>Faculty</th><th>Schedule</th><th>Actions</th></tr></thead>
+          <tbody id="class-table"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- QR GENERATOR -->
+  <div class="page" id="page-qrgen">
+    <div class="sec-header">
+      <div><div class="sec-title">QR Generator</div><div class="sec-sub">Generate student QR codes for scanning</div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+      <div class="card">
+        <div class="card-title" style="margin-bottom:16px;">GENERATE QR CODE</div>
+        <div class="form-group" style="margin-bottom:12px;">
+          <label>STUDENT</label>
+          <select id="qr-student" onchange="updateQRPreview()">
+            <option value="">Select a student...</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin-bottom:16px;">
+          <label>CUSTOM DATA (optional override)</label>
+          <input id="qr-custom" placeholder="Or enter custom QR data..." oninput="updateQRPreview()">
+        </div>
+        <button class="btn btn-primary" onclick="downloadQR()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download QR
+        </button>
+      </div>
+      <div class="card" style="display:flex;flex-direction:column;align-items:center;justify-content:center;">
+        <div id="qr-canvas-wrap" style="background:#fff;padding:16px;border-radius:8px;">
+          <canvas id="qr-canvas" width="200" height="200"></canvas>
+        </div>
+        <p style="font-size:12px;color:var(--muted);margin-top:12px;font-family:var(--mono);text-align:center;" id="qr-label">Select a student to preview</p>
+      </div>
+    </div>
+    <div class="card" style="margin-top:20px;">
+      <div class="card-title" style="margin-bottom:12px;">BULK GENERATE</div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:12px;">Generate QR codes for all registered students</p>
+      <button class="btn btn-ghost" onclick="bulkGenerate()">Generate All QR Codes (ZIP)</button>
+    </div>
+  </div>
+
+</main>
+</div>
+
+<!-- ADD STUDENT MODAL -->
+<div class="modal-bg" id="modal-add-student">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-stu-title">Add Student</div>
+      <button class="modal-close" onclick="closeModal('modal-add-student')">&times;</button>
+    </div>
+    <div class="form-grid">
+      <div class="form-group"><label>STUDENT ID *</label><input id="f-id" placeholder="STU001"></div>
+      <div class="form-group"><label>FULL NAME *</label><input id="f-name" placeholder="Full Name"></div>
+      <div class="form-group"><label>DEPARTMENT *</label>
+        <select id="f-dept">
+          <option value="CS">Computer Science</option>
+          <option value="EC">Electronics</option>
+          <option value="ME">Mechanical</option>
+          <option value="CE">Civil</option>
+        </select>
+      </div>
+      <div class="form-group"><label>SECTION</label><input id="f-sec" placeholder="A"></div>
+      <div class="form-group full"><label>EMAIL</label><input id="f-email" type="email" placeholder="student@college.edu"></div>
+      <div class="form-group full"><label>PHONE</label><input id="f-phone" placeholder="+91 XXXXX XXXXX"></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:20px;justify-content:flex-end;">
+      <button class="btn btn-ghost" onclick="closeModal('modal-add-student')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveStudent()" id="save-stu-btn">Add Student</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD CLASS MODAL -->
+<div class="modal-bg" id="modal-add-class">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Add Class</div>
+      <button class="modal-close" onclick="closeModal('modal-add-class')">&times;</button>
+    </div>
+    <div class="form-grid">
+      <div class="form-group"><label>CLASS CODE *</label><input id="c-code" placeholder="CS201"></div>
+      <div class="form-group"><label>SUBJECT *</label><input id="c-sub" placeholder="Data Structures"></div>
+      <div class="form-group"><label>DEPARTMENT</label>
+        <select id="c-dept">
+          <option value="CS">Computer Science</option>
+          <option value="EC">Electronics</option>
+          <option value="ME">Mechanical</option>
+        </select>
+      </div>
+      <div class="form-group"><label>FACULTY</label><input id="c-fac" placeholder="Prof. Name"></div>
+      <div class="form-group full"><label>SCHEDULE</label><input id="c-sched" placeholder="Mon/Wed/Fri 9:00 AM"></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:20px;justify-content:flex-end;">
+      <button class="btn btn-ghost" onclick="closeModal('modal-add-class')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveClass()">Add Class</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast">
+  <span id="toast-icon" style="font-size:16px;">✓</span>
+  <span id="toast-msg">Done</span>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script src="https://unpkg.com/jsqr@1.4.0/dist/jsQR.js"></script>
+<script>
+// ─── STATE ───────────────────────────────────────────────
+let students = JSON.parse(localStorage.getItem('sm_students') || '[]');
+let classes  = JSON.parse(localStorage.getItem('sm_classes')  || '[]');
+let scans    = JSON.parse(localStorage.getItem('sm_scans')    || '[]');
+let editId   = null;
+
+// Seed default data
+if (!students.length) {
+  students = [
+    { id:'STU001', name:'Arjun Kumar',    dept:'CS', sec:'A', email:'arjun@college.edu',   phone:'+91 98765 43210' },
+    { id:'STU002', name:'Priya Sharma',   dept:'CS', sec:'B', email:'priya@college.edu',   phone:'+91 98765 43211' },
+    { id:'STU003', name:'Ravi Patel',     dept:'EC', sec:'A', email:'ravi@college.edu',    phone:'+91 98765 43212' },
+    { id:'STU004', name:'Anitha Reddy',   dept:'ME', sec:'A', email:'anitha@college.edu',  phone:'+91 98765 43213' },
+    { id:'STU005', name:'Karan Mehta',    dept:'CE', sec:'A', email:'karan@college.edu',   phone:'+91 98765 43214' },
+    { id:'STU006', name:'Deepika Nair',   dept:'CS', sec:'A', email:'deepika@college.edu', phone:'+91 98765 43215' },
+  ];
+  save();
+}
+if (!classes.length) {
+  classes = [
+    { code:'CS201', sub:'Data Structures',     dept:'CS', fac:'Prof. Ramesh',  sched:'Mon/Wed/Fri 9:00 AM' },
+    { code:'CS202', sub:'Operating Systems',   dept:'CS', fac:'Prof. Suresh',  sched:'Tue/Thu 11:00 AM' },
+    { code:'EC301', sub:'Digital Electronics', dept:'EC', fac:'Prof. Kavitha', sched:'Mon/Wed 2:00 PM' },
+  ];
+  save();
+}
+
+function save() {
+  localStorage.setItem('sm_students', JSON.stringify(students));
+  localStorage.setItem('sm_classes',  JSON.stringify(classes));
+  localStorage.setItem('sm_scans',    JSON.stringify(scans));
+}
+
+// Today's scans only
+function todayScans() {
+  const d = new Date().toDateString();
+  return scans.filter(s => new Date(s.ts).toDateString() === d);
+}
+
+// ─── CLOCK ───────────────────────────────────────────────
+function tick() {
+  const n = new Date();
+  document.getElementById('clock').textContent = n.toLocaleTimeString();
+  document.getElementById('hdate').textContent = n.toLocaleDateString('en-IN', { weekday:'short', day:'numeric', month:'short', year:'numeric' });
+  const trn = document.getElementById('time-rule-now');
+  const trl = document.getElementById('time-rule-label');
+  const tri = document.getElementById('time-rule-icon');
+  if (trn && trl && tri) {
+    const ts = getTimeStatus ? getTimeStatus(n) : null;
+    trn.textContent = n.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    if (ts === 'present') { trl.textContent = 'PRESENT window (before 9:15 AM)'; trl.style.color='var(--success)'; tri.style.color='var(--success)'; }
+    else if (ts === 'absent') { trl.textContent = 'ABSENT window (9:15 AM – 5:00 PM)'; trl.style.color='var(--danger)'; tri.style.color='var(--danger)'; }
+    else { trl.textContent = 'CLOSED (after 5:00 PM)'; trl.style.color='var(--muted)'; tri.style.color='var(--muted)'; }
+  }
+}
+tick(); setInterval(tick, 1000);
+
+// ─── NAVIGATION ──────────────────────────────────────────
+function goto(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => {
+    if (n.getAttribute('onclick') && n.getAttribute('onclick').includes("'"+page+"'")) n.classList.add('active');
+  });
+  if (page === 'dashboard')  renderDashboard();
+  if (page === 'students')   renderStudents();
+  if (page === 'reports')    renderReports();
+  if (page === 'classes')    renderClasses();
+  if (page === 'qrgen')      renderQRGen();
+}
+
+// ─── DASHBOARD ───────────────────────────────────────────
+function renderDashboard() {
+  const ts = todayScans();
+  const uniq = [...new Set(ts.map(s => s.stuId))].length;
+  const pct  = students.length ? Math.round(uniq / students.length * 100) : 0;
+  document.getElementById('stat-total').textContent   = students.length;
+  document.getElementById('stat-present').textContent = uniq;
+  document.getElementById('stat-absent').textContent  = Math.max(0, students.length - uniq);
+  document.getElementById('stat-pct').textContent     = pct + '% attendance';
+
+  const rEl = document.getElementById('dash-recent');
+  if (!ts.length) { rEl.innerHTML = '<p style="color:var(--muted);font-size:13px;text-align:center;padding:20px 0;">No scans yet today</p>'; }
+  else {
+    rEl.innerHTML = ts.slice(-5).reverse().map(s => `
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);">
+        <div style="width:32px;height:32px;border-radius:6px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px;color:var(--accent);">${s.stuId.replace(/\D/g,'').slice(-3)}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:13px;font-weight:500;">${s.name}</div>
+          <div style="font-size:11px;color:var(--muted);font-family:var(--mono);">${s.stuId} · ${s.dept}</div>
+        </div>
+        <div style="font-size:11px;color:var(--muted);font-family:var(--mono);">${new Date(s.ts).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div>
+      </div>`).join('');
+  }
+
+  const wc = document.getElementById('week-chart');
+  const vals = [78, 82, 75, 90, 88, uniq && students.length ? pct : 0];
+  wc.innerHTML = vals.map((v,i) => {
+    const cls = v < 75 ? 'low' : v < 85 ? 'mid' : '';
+    return `<div style="flex:1;height:${v}%;border-radius:4px 4px 0 0;background:${v<75?'var(--danger)':v<85?'var(--warning)':'var(--accent)'};min-width:8px;transition:height .4s;"></div>`;
+  }).join('');
+}
+
+// ─── SCANNER ─────────────────────────────────────────────
+let camStream = null, scanning = false, scanInterval = null, facingMode = 'environment';
+const lastScanned = {};
+
+function showScanErr(msg) { const b=document.getElementById('scan-err'); b.textContent=msg; b.style.display='block'; }
+function hideScanErr()    { document.getElementById('scan-err').style.display='none'; }
+function showScanAlert(msg) { const b=document.getElementById('scan-alert'); b.textContent=msg; b.style.display='block'; setTimeout(()=>{b.style.display='none';},3000); }
+
+async function startCamera() {
+  hideScanErr();
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    showScanErr('Camera API not supported. Use Chrome, Firefox, or Safari on HTTPS.'); return;
+  }
+  try {
+    camStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: facingMode }, width: { ideal: 640 }, height: { ideal: 640 } }
+    });
+    const v = document.getElementById('scan-video');
+    v.srcObject = camStream; v.style.display = 'block';
+    document.getElementById('scan-ph').style.display  = 'none';
+    document.getElementById('scan-ov').style.display  = 'flex';
+    document.getElementById('btn-cam-start').style.display = 'none';
+    document.getElementById('btn-cam-stop').style.display  = '';
+    scanning = true;
+    v.onloadedmetadata = () => { v.play(); beginDetect(); };
+    toast('Camera started', 'success');
+  } catch(e) { handleCamErr(e); }
+}
+
+function handleCamErr(e) {
+  const n = e.name || '';
+  const isFile = location.protocol === 'file:';
+  if (isFile) {
+    showScanErr('Camera blocked: This page is opened as a local file (file://). To use the camera, serve this file via a local server (e.g. VS Code Live Server, or run: python -m http.server 8080) and open http://localhost:8080. You can still use Manual/Demo scan below.');
+    return;
+  }
+  if (n === 'NotAllowedError' || n === 'PermissionDeniedError')
+    showScanErr('Camera permission denied. Click the 🔒 icon in your browser address bar → Allow camera, then click Start Camera again.');
+  else if (n === 'NotFoundError')
+    showScanErr('No camera found on this device. Use the Manual/Demo scan below.');
+  else if (n === 'NotReadableError')
+    showScanErr('Camera is in use by another app. Close other apps using the camera, then retry.');
+  else if (location.protocol !== 'https:' && location.hostname !== 'localhost')
+    showScanErr('Camera requires HTTPS. Serve this page over a secure connection, or use localhost.');
+  else {
+    navigator.mediaDevices.getUserMedia({ video: true }).then(s => {
+      camStream = s;
+      const v = document.getElementById('scan-video');
+      v.srcObject = s; v.style.display = 'block';
+      document.getElementById('scan-ph').style.display = 'none';
+      document.getElementById('scan-ov').style.display = 'flex';
+      document.getElementById('btn-cam-start').style.display = 'none';
+      document.getElementById('btn-cam-stop').style.display = '';
+      scanning = true;
+      v.onloadedmetadata = () => { v.play(); beginDetect(); };
+      hideScanErr(); toast('Camera started (fallback mode)', 'success');
+    }).catch(() => showScanErr('Camera error: ' + (e.message || e.name) + '. Try the Manual scan below.'));
+  }
+}
+
+function stopCamera() {
+  scanning = false;
+  if (scanInterval) clearInterval(scanInterval);
+  if (camStream) camStream.getTracks().forEach(t => t.stop());
+  camStream = null;
+  const v = document.getElementById('scan-video');
+  v.srcObject = null; v.style.display = 'none';
+  document.getElementById('scan-ph').style.display = 'flex';
+  document.getElementById('scan-ov').style.display = 'none';
+  document.getElementById('btn-cam-start').style.display = '';
+  document.getElementById('btn-cam-stop').style.display = 'none';
+}
+
+function toggleFlip() {
+  facingMode = facingMode === 'environment' ? 'user' : 'environment';
+  if (camStream) { stopCamera(); startCamera(); }
+}
+
+function beginDetect() {
+  const v = document.getElementById('scan-video');
+  const c = document.createElement('canvas');
+  const ctx = c.getContext('2d', { willReadFrequently: true });
+  scanInterval = setInterval(() => {
+    if (!scanning || v.readyState !== v.HAVE_ENOUGH_DATA) return;
+    c.width = v.videoWidth; c.height = v.videoHeight;
+    ctx.drawImage(v, 0, 0);
+    try {
+      const img = ctx.getImageData(0, 0, c.width, c.height);
+      const code = jsQR(img.data, img.width, img.height, { inversionAttempts: 'dontInvert' });
+      if (code && code.data) {
+        const now = Date.now();
+        if (!lastScanned[code.data] || now - lastScanned[code.data] > 5000) {
+          lastScanned[code.data] = now;
+          processQR(code.data);
+        }
+      }
+    } catch(e) {}
+  }, 250);
+}
+
+// Time rules: before 9:15 AM = present, after 9:15 AM = absent, after 5:00 PM = closed
+function getTimeStatus(d) {
+  const mins = d.getHours()*60 + d.getMinutes();
+  if (mins >= 17*60) return 'closed';
+  if (mins < 9*60+15) return 'present';
+  return 'absent';
+}
+
+function processQR(raw) {
+  flash();
+  const now = new Date();
+  const session = document.getElementById('scan-session').value;
+  const ts = getTimeStatus(now);
+  if (ts === 'closed') { showScanErr('College closed after 5:00 PM. Scanning not allowed.'); return; }
+  const parts = raw.split('|').map(s => s.trim());
+  const stuId = parts[0] || raw;
+  const name  = parts[1] || findStudentName(stuId) || 'Unknown';
+  const dept  = parts[2] || findStudentDept(stuId) || '—';
+  const cls   = document.getElementById('scan-class').value || '—';
+  const already = todayScans().find(s => s.stuId === stuId && s.session === session);
+  if (already) { showScanAlert('Already marked ['+session+']: ' + name + ' (' + (already.status||'present').toUpperCase() + ')'); return; }
+  const entry = { stuId, name, dept, cls, ts: now.toISOString(), status: ts, session };
+  scans.push(entry); save();
+  renderScanLog(); updateBadge(); renderDashboard();
+  showScanAlert(name + ' ['+session+'] marked ' + ts.toUpperCase());
+  toast(name + ' → ' + ts.toUpperCase() + ' ['+session+']', ts==='present'?'success':'error');
+}
+
+function findStudentName(id) { const s = students.find(s => s.id === id); return s ? s.name : null; }
+function findStudentDept(id) { const s = students.find(s => s.id === id); return s ? s.dept + '-' + s.sec : null; }
+
+function flash() {
+  const f = document.getElementById('scan-flash');
+  f.classList.add('show');
+  setTimeout(() => f.classList.remove('show'), 600);
+}
+
+function demoScan(data) { processQR(data); }
+
+function manualScan() {
+  const v = document.getElementById('manual-input').value.trim();
+  if (!v) return;
+  processQR(v);
+  document.getElementById('manual-input').value = '';
+}
+
+function renderScanLog() {
+  const ts = todayScans();
+  document.getElementById('scan-log-count').textContent = ts.length;
+  document.getElementById('scan-count-badge').textContent = ts.length;
+  const el = document.getElementById('scan-log');
+  if (!ts.length) { el.innerHTML = '<p style="color:var(--muted);font-size:13px;text-align:center;padding:20px 0;">No scans yet</p>'; return; }
+  el.innerHTML = ts.slice().reverse().map(s => `
+    <div class="scan-entry">
+      <div class="scan-avatar">${s.stuId.replace(/\D/g,'').slice(-3)||'—'}</div>
+      <div class="scan-info">
+        <div class="scan-name">${s.name}</div>
+        <div class="scan-meta">${s.stuId} · ${s.dept}</div>
+      </div>
+      <span style="font-size:10px;padding:2px 6px;border-radius:4px;background:${s.session==='evening'?'rgba(247,192,79,.15)':'rgba(79,142,247,.15)'};color:${s.session==='evening'?'var(--warning)':'var(--accent)'};font-family:var(--mono);">${(s.session||'morning').toUpperCase()}</span>
+      <div class="scan-time">${new Date(s.ts).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div>
+      <span class="badge ${s.status==='absent'?'badge-absent':'badge-present'}">${(s.status||'present').toUpperCase()}</span>
+    </div>`).join('');
+}
+
+function clearLog() {
+  if (!confirm('Clear today\'s scan log?')) return;
+  const d = new Date().toDateString();
+  scans = scans.filter(s => new Date(s.ts).toDateString() !== d);
+  save(); renderScanLog(); renderDashboard(); updateBadge();
+  toast('Log cleared', 'success');
+}
+
+function updateBadge() {
+  document.getElementById('scan-count-badge').textContent = todayScans().length;
+}
+
+// ─── STUDENTS ────────────────────────────────────────────
+let editStudentId = null;
+
+function renderStudents() {
+  const q = (document.getElementById('stu-search').value || '').toLowerCase();
+  const f = document.getElementById('stu-filter').value;
+  const filtered = students.filter(s => {
+    const matchQ = !q || s.name.toLowerCase().includes(q) || s.id.toLowerCase().includes(q) || s.dept.toLowerCase().includes(q);
+    const matchF = !f || s.dept === f;
+    return matchQ && matchF;
+  });
+  document.getElementById('stu-sub').textContent = filtered.length + ' of ' + students.length + ' students';
+  const tb = document.getElementById('stu-table');
+  if (!filtered.length) { tb.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:24px;">No students found</td></tr>'; return; }
+  const ts = todayScans();
+  const statusFilter = document.getElementById('stu-status-filter').value;
+  const filtered2 = statusFilter ? filtered.filter(s => {
+    const mScan = ts.find(sc => sc.stuId === s.id && sc.session === 'morning');
+    const eScan = ts.find(sc => sc.stuId === s.id && sc.session === 'evening');
+    const st = mScan?.status || eScan?.status || 'absent';
+    return st === statusFilter;
+  }) : filtered;
+  tb.innerHTML = filtered2.map(s => {
+    const mScan = ts.find(sc => sc.stuId === s.id && sc.session === 'morning');
+    const eScan = ts.find(sc => sc.stuId === s.id && sc.session === 'evening');
+    const mStatus = mScan?.status || 'absent';
+    const eStatus = eScan?.status || 'absent';
+    return `<tr>
+      <td><input type="checkbox" class="row-chk" value="${s.id}" style="cursor:pointer;"></td>
+      <td style="font-family:var(--mono);color:var(--accent);">${s.id}</td>
+      <td style="font-weight:500;">${s.name}</td>
+      <td>${s.dept}</td>
+      <td>${s.sec || '—'}</td>
+      <td>
+        <span class="badge badge-${mStatus}">${mStatus.toUpperCase()}</span>
+        ${mScan ? '<span style="font-size:10px;color:var(--muted);font-family:var(--mono);margin-left:4px;">'+new Date(mScan.ts).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})+'</span>' : ''}
+      </td>
+      <td>
+        <span class="badge badge-${eStatus}">${eStatus.toUpperCase()}</span>
+        ${eScan ? '<span style="font-size:10px;color:var(--muted);font-family:var(--mono);margin-left:4px;">'+new Date(eScan.ts).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})+'</span>' : ''}
+      </td>
+      <td>
+        <div style="display:flex;gap:4px;flex-wrap:wrap;">
+          <button class="btn btn-success btn-sm" onclick="markManual('${s.id}','present','morning')" title="Morning Present">☀️P</button>
+          <button class="btn btn-danger btn-sm" onclick="markManual('${s.id}','absent','morning')" title="Morning Absent">☀️A</button>
+          <button class="btn btn-success btn-sm" onclick="markManual('${s.id}','present','evening')" title="Evening Present">🌆P</button>
+          <button class="btn btn-danger btn-sm" onclick="markManual('${s.id}','absent','evening')" title="Evening Absent">🌆A</button>
+          <button class="btn btn-ghost btn-sm" onclick="editStudent('${s.id}')">Edit</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteStudent('${s.id}')">Del</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function openAddStudent() {
+  editStudentId = null;
+  document.getElementById('modal-stu-title').textContent = 'Add Student';
+  document.getElementById('save-stu-btn').textContent = 'Add Student';
+  ['f-id','f-name','f-sec','f-email','f-phone'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('f-dept').value = 'CS';
+  document.getElementById('modal-add-student').classList.add('open');
+}
+
+function editStudent(id) {
+  const s = students.find(x => x.id === id);
+  if (!s) return;
+  editStudentId = id;
+  document.getElementById('modal-stu-title').textContent = 'Edit Student';
+  document.getElementById('save-stu-btn').textContent = 'Save Changes';
+  document.getElementById('f-id').value    = s.id;
+  document.getElementById('f-name').value  = s.name;
+  document.getElementById('f-dept').value  = s.dept;
+  document.getElementById('f-sec').value   = s.sec || '';
+  document.getElementById('f-email').value = s.email || '';
+  document.getElementById('f-phone').value = s.phone || '';
+  document.getElementById('modal-add-student').classList.add('open');
+}
+
+function saveStudent() {
+  const id = document.getElementById('f-id').value.trim();
+  const name = document.getElementById('f-name').value.trim();
+  if (!id || !name) { toast('ID and Name are required', 'error'); return; }
+  const s = {
+    id, name,
+    dept:  document.getElementById('f-dept').value,
+    sec:   document.getElementById('f-sec').value.trim(),
+    email: document.getElementById('f-email').value.trim(),
+    phone: document.getElementById('f-phone').value.trim()
+  };
+  if (editStudentId) {
+    const idx = students.findIndex(x => x.id === editStudentId);
+    if (idx !== -1) students[idx] = s;
+    toast('Student updated', 'success');
+  } else {
+    if (students.find(x => x.id === id)) { toast('Student ID already exists', 'error'); return; }
+    students.push(s);
+    toast('Student added', 'success');
+  }
+  save(); closeModal('modal-add-student'); renderStudents(); renderQRGen();
+}
+
+function deleteStudent(id) {
+  if (!confirm('Delete this student?')) return;
+  students = students.filter(s => s.id !== id);
+  save(); renderStudents(); toast('Student deleted', 'success');
+}
+
+function markManual(stuId, status, session) {
+  const s = students.find(x => x.id === stuId);
+  if (!s) return;
+  session = session || 'morning';
+  const d = new Date().toDateString();
+  scans = scans.filter(sc => !(sc.stuId === stuId && new Date(sc.ts).toDateString() === d && sc.session === session));
+  if (status !== 'remove') {
+    scans.push({ stuId, name: s.name, dept: s.dept+'-'+(s.sec||''), cls: '—', ts: new Date().toISOString(), status, session });
+  }
+  save(); renderStudents(); renderScanLog(); updateBadge(); renderDashboard();
+  toast(s.name + ' ['+session+'] → ' + status.toUpperCase(), status==='present'?'success':'error');
+}
+
+// ─── REPORTS ─────────────────────────────────────────────
+function renderReports() {
+  document.getElementById('r-total-scans').textContent = scans.length;
+  const summary = {};
+  students.forEach(s => { summary[s.id] = { ...s, count: 0, last: null }; });
+  scans.forEach(sc => {
+    if (!summary[sc.stuId]) summary[sc.stuId] = { id: sc.stuId, name: sc.name, dept: sc.dept, sec: '', count: 0, last: null };
+    summary[sc.stuId].count++;
+    const t = new Date(sc.ts);
+    if (!summary[sc.stuId].last || t > new Date(summary[sc.stuId].last)) summary[sc.stuId].last = sc.ts;
+  });
+  const rows = Object.values(summary);
+  const maxCount = Math.max(...rows.map(r => r.count), 1);
+  const avgPct = rows.length ? Math.round(rows.reduce((a,r) => a + r.count/maxCount*100, 0) / rows.length) : 0;
+  const perfect = rows.filter(r => r.count >= maxCount && maxCount > 0).length;
+  const risk = rows.filter(r => r.count / maxCount * 100 < 75).length;
+  document.getElementById('r-avg').textContent     = avgPct + '%';
+  document.getElementById('r-perfect').textContent = perfect;
+  document.getElementById('r-risk').textContent    = risk;
+
+  const tb = document.getElementById('rep-table');
+  if (!rows.length) { tb.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:24px;">No data</td></tr>'; return; }
+  tb.innerHTML = rows.sort((a,b) => b.count - a.count).map(r => {
+    const pct = maxCount ? Math.round(r.count / maxCount * 100) : 0;
+    const cls = pct < 75 ? 'badge-absent' : 'badge-present';
+    return `<tr>
+      <td style="font-family:var(--mono);color:var(--accent);">${r.id}</td>
+      <td style="font-weight:500;">${r.name}</td>
+      <td>${r.dept}${r.sec ? '-'+r.sec : ''}</td>
+      <td style="font-family:var(--mono);">${r.count}</td>
+      <td style="color:var(--muted);font-size:12px;">${r.last ? new Date(r.last).toLocaleString() : '—'}</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="background:var(--surface2);border-radius:4px;height:6px;width:80px;overflow:hidden;"><div style="height:100%;width:${pct}%;background:${pct<75?'var(--danger)':pct<85?'var(--warning)':'var(--success)'};border-radius:4px;"></div></div>
+          <span class="badge ${cls}">${pct}%</span>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ─── CLASSES ─────────────────────────────────────────────
+function renderClasses() {
+  const tb = document.getElementById('class-table');
+  if (!classes.length) { tb.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:24px;">No classes yet</td></tr>'; return; }
+  tb.innerHTML = classes.map(c => `<tr>
+    <td style="font-family:var(--mono);color:var(--accent);">${c.code}</td>
+    <td style="font-weight:500;">${c.sub}</td>
+    <td>${c.dept}</td>
+    <td>${c.fac || '—'}</td>
+    <td style="color:var(--muted);font-size:12px;">${c.sched || '—'}</td>
+    <td><button class="btn btn-danger btn-sm" onclick="deleteClass('${c.code}')">Delete</button></td>
+  </tr>`).join('');
+}
+
+function openAddClass() {
+  ['c-code','c-sub','c-fac','c-sched'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('modal-add-class').classList.add('open');
+}
+
+function saveClass() {
+  const code = document.getElementById('c-code').value.trim();
+  const sub  = document.getElementById('c-sub').value.trim();
+  if (!code || !sub) { toast('Code and Subject required', 'error'); return; }
+  if (classes.find(c => c.code === code)) { toast('Class code already exists', 'error'); return; }
+  classes.push({ code, sub, dept: document.getElementById('c-dept').value, fac: document.getElementById('c-fac').value.trim(), sched: document.getElementById('c-sched').value.trim() });
+  save(); closeModal('modal-add-class'); renderClasses(); toast('Class added', 'success');
+}
+
+function deleteClass(code) {
+  if (!confirm('Delete class ' + code + '?')) return;
+  classes = classes.filter(c => c.code !== code);
+  save(); renderClasses(); toast('Class deleted', 'success');
+}
+
+// ─── QR GENERATOR ────────────────────────────────────────
+let qrObj = null;
+
+function renderQRGen() {
+  const sel = document.getElementById('qr-student');
+  sel.innerHTML = '<option value="">Select a student...</option>' +
+    students.map(s => `<option value="${s.id}">${s.id} — ${s.name}</option>`).join('');
+  updateQRPreview();
+}
+
+function updateQRPreview() {
+  const id  = document.getElementById('qr-student').value;
+  const cus = document.getElementById('qr-custom').value.trim();
+  let data  = cus;
+  let label = cus;
+  if (!data && id) {
+    const s = students.find(x => x.id === id);
+    if (s) { data = `${s.id}|${s.name}|${s.dept}-${s.sec}`; label = s.name; }
+  }
+  const cv = document.getElementById('qr-canvas');
+  const ctx = cv.getContext('2d');
+  ctx.clearRect(0, 0, 200, 200);
+  document.getElementById('qr-label').textContent = label || 'Select a student to preview';
+  if (!data) return;
+  try {
+    cv.parentElement.innerHTML = '<canvas id="qr-canvas" width="200" height="200"></canvas>';
+    new QRCode(document.getElementById('qr-canvas').parentElement, {
+      text: data, width: 200, height: 200,
+      colorDark: '#000000', colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.H
+    });
+  } catch(e) {}
+}
+
+function downloadQR() {
+  const el = document.getElementById('qr-canvas').parentElement.querySelector('canvas, img');
+  if (!el) { toast('Generate a QR first', 'error'); return; }
+  const a = document.createElement('a');
+  if (el.tagName === 'IMG') { a.href = el.src; }
+  else { a.href = el.toDataURL(); }
+  const id = document.getElementById('qr-student').value || 'custom';
+  a.download = 'qr_' + id + '.png';
+  a.click();
+  toast('QR downloaded', 'success');
+}
+
+function bulkGenerate() {
+  toast('Bulk export: ' + students.length + ' QR codes (ZIP requires server-side). Use individual download for now.', 'success');
+}
+
+// ─── BULK ACTIONS ────────────────────────────────────────
+function toggleAllCheckboxes(master) {
+  document.querySelectorAll('.row-chk').forEach(c => c.checked = master.checked);
+}
+
+function getCheckedIds() {
+  const checked = [...document.querySelectorAll('.row-chk:checked')].map(c => c.value);
+  return checked.length ? checked : students.map(s => s.id);
+}
+
+function markAllPresent() {
+  const session = 'morning';
+  students.forEach(s => markSilent(s.id, 'present', session));
+  students.forEach(s => markSilent(s.id, 'present', 'evening'));
+  save(); renderStudents(); renderScanLog(); updateBadge(); renderDashboard();
+  toast('All students marked PRESENT (both sessions)', 'success');
+}
+
+function markAllAbsent() {
+  const d = new Date().toDateString();
+  scans = scans.filter(sc => new Date(sc.ts).toDateString() !== d);
+  students.forEach(s => {
+    scans.push({ stuId: s.id, name: s.name, dept: s.dept+'-'+(s.sec||''), cls: '—', ts: new Date().toISOString(), status: 'absent', session: 'morning' });
+    scans.push({ stuId: s.id, name: s.name, dept: s.dept+'-'+(s.sec||''), cls: '—', ts: new Date().toISOString(), status: 'absent', session: 'evening' });
+  });
+  save(); renderStudents(); renderScanLog(); updateBadge(); renderDashboard();
+  toast('All students marked ABSENT (both sessions)', 'error');
+}
+
+function markSilent(stuId, status, session) {
+  const s = students.find(x => x.id === stuId);
+  if (!s) return;
+  const d = new Date().toDateString();
+  scans = scans.filter(sc => !(sc.stuId === stuId && new Date(sc.ts).toDateString() === d && sc.session === session));
+  scans.push({ stuId, name: s.name, dept: s.dept+'-'+(s.sec||''), cls: '—', ts: new Date().toISOString(), status, session });
+}
+
+function markFilteredPresent() {
+  getCheckedIds().forEach(id => { markSilent(id,'present','morning'); markSilent(id,'present','evening'); });
+  save(); renderStudents(); renderScanLog(); updateBadge(); renderDashboard();
+  toast('Marked PRESENT (both sessions)', 'success');
+}
+
+function markFilteredAbsent() {
+  getCheckedIds().forEach(id => { markSilent(id,'absent','morning'); markSilent(id,'absent','evening'); });
+  save(); renderStudents(); renderScanLog(); updateBadge(); renderDashboard();
+  toast('Marked ABSENT (both sessions)', 'error');
+}
+
+// ─── PRINT ───────────────────────────────────────────────
+function printAttendance() {
+  const ts = todayScans();
+  const date = new Date().toLocaleDateString('en-IN', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+  const rows = students.map(s => {
+    const mScan = ts.find(sc => sc.stuId === s.id && sc.session === 'morning');
+    const eScan = ts.find(sc => sc.stuId === s.id && sc.session === 'evening');
+    return `<tr>
+      <td>${s.id}</td><td>${s.name}</td><td>${s.dept}-${s.sec||''}</td>
+      <td style="color:${mScan?.status==='present'?'green':'red'};font-weight:bold;">${mScan ? mScan.status.toUpperCase() : 'ABSENT'}</td>
+      <td style="color:${eScan?.status==='present'?'green':'red'};font-weight:bold;">${eScan ? eScan.status.toUpperCase() : 'ABSENT'}</td>
+    </tr>`;
+  }).join('');
+  const w = window.open('','_blank');
+  w.document.write(`<!DOCTYPE html><html><head><title>Attendance - ${date}</title>
+  <style>body{font-family:Arial,sans-serif;padding:20px;color:#000;}h2{margin-bottom:4px;}p{color:#555;margin-bottom:16px;}
+  table{width:100%;border-collapse:collapse;font-size:13px;}th,td{border:1px solid #ccc;padding:8px 10px;text-align:left;}
+  th{background:#f0f0f0;font-weight:600;}tr:nth-child(even){background:#fafafa;}
+  @media print{button{display:none;}}</style></head><body>
+  <h2>ScanMark — Attendance Report</h2><p>${date}</p>
+  <button onclick="window.print()" style="margin-bottom:16px;padding:8px 16px;background:#4f8ef7;color:#fff;border:none;border-radius:6px;cursor:pointer;">🖨️ Print</button>
+  <table><thead><tr><th>ID</th><th>Name</th><th>Dept</th><th>☀️ Morning</th><th>🌆 Evening</th></tr></thead><tbody>${rows}</tbody></table>
+  </body></html>`);
+  w.document.close();
+}
+function exportCSV() {
+  const ts = todayScans();
+  const rows = [['Student ID','Name','Department','Class','Time','Date']];
+  (ts.length ? ts : scans).forEach(s => {
+    rows.push([s.stuId, s.name, s.dept, s.cls || '—', new Date(s.ts).toLocaleTimeString(), new Date(s.ts).toLocaleDateString()]);
+  });
+  const csv  = rows.map(r => r.map(c => '"' + String(c).replace(/"/g,'""') + '"').join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a    = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'attendance_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+  toast('CSV exported', 'success');
+}
+
+// ─── MODAL ───────────────────────────────────────────────
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+window.addEventListener('click', e => {
+  document.querySelectorAll('.modal-bg.open').forEach(m => { if (e.target === m) m.classList.remove('open'); });
+});
+
+// ─── TOAST ───────────────────────────────────────────────
+let toastTimer;
+function toast(msg, type = 'success') {
+  const t = document.getElementById('toast');
+  document.getElementById('toast-msg').textContent = msg;
+  document.getElementById('toast-icon').textContent = type === 'success' ? '✓' : '✕';
+  document.getElementById('toast-icon').style.color = type === 'success' ? 'var(--success)' : 'var(--danger)';
+  t.className = 'show t-' + type;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.classList.remove('show'); }, 3000);
+}
+
+// ─── INIT ─────────────────────────────────────────────────
+renderDashboard();
+renderScanLog();
+updateBadge();
+</script>
+</body>
+</html>
